@@ -39,5 +39,9 @@ yarn-error.log
 Homestead.json
 Homestead.yaml
 Thumbs.db
+<<<<<<< HEAD
 PROJECT_GUIDE.md
 >>>>>>> 6d22108 (Update)
+=======
+PROJECT_GUIDE.md
+>>>>>>> 592a929 (update gitignore files)
