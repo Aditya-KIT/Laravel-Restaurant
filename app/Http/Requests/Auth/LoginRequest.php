@@ -2,23 +2,17 @@
 
 namespace App\Http\Requests\Auth;
 
-<<<<<<< HEAD
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-=======
-use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Foundation\Http\FormRequest;
->>>>>>> 6d22108 (Update)
 
 class LoginRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
-<<<<<<< HEAD
      *
      * @return bool
      */
@@ -26,15 +20,10 @@ class LoginRequest extends FormRequest
     {
         return true;
     }
-=======
-     */
-    public function authorize(): bool { return true; }
->>>>>>> 6d22108 (Update)
 
     /**
      * Get the validation rules that apply to the request.
      *
-<<<<<<< HEAD
      * @return array
      */
     public function rules()
@@ -101,15 +90,4 @@ class LoginRequest extends FormRequest
     {
         return Str::lower($this->input('email')).'|'.$this->ip();
     }
-=======
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
-    public function rules(): array
-    {
-        return [
-            'email' => 'required|email',
-            'password' => 'required|string',
-        ];
-    }
->>>>>>> 6d22108 (Update)
 }

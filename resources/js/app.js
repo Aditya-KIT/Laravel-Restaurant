@@ -1,5 +1,4 @@
 import './bootstrap';
-<<<<<<< HEAD
 import '../css/app.css';
 
 import { createApp, h } from 'vue';
@@ -22,5 +21,3 @@ createInertiaApp({
 });
 
 InertiaProgress.init({ color: '#4B5563' });
-=======
->>>>>>> 6d22108 (Update)
