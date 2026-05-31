@@ -43,7 +43,8 @@ RUN COMPOSER_MEMORY_LIMIT=-1 composer install \
     --no-interaction \
     --prefer-dist \
     --optimize-autoloader \
-    --ignore-platform-reqs
+    --ignore-platform-reqs \
+    --verbose
 
 # Copy all application files
 COPY . .
