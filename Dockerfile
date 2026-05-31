@@ -40,10 +40,9 @@ COPY composer.json composer.lock ./
 # COMPOSER_MEMORY_LIMIT=-1 prevents out-of-memory failures on constrained builders
 RUN COMPOSER_MEMORY_LIMIT=-1 composer install \
     --no-dev \
-    --no-scripts \
     --no-interaction \
     --prefer-dist \
-    --no-autoloader \
+    --optimize-autoloader \
     --ignore-platform-reqs
 
 # Copy all application files
