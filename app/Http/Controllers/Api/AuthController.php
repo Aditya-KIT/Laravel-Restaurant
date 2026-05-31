@@ -14,37 +14,55 @@ class AuthController extends Controller
 {
     public function register(RegisterRequest $request): JsonResponse
     {
-        $customerRole = Role::firstOrCreate(['name' => 'customer']);
+        try {
+            // If no users exist, the first user becomes an admin
+            $isFirstUser = User::count() === 0;
+            $roleName = $isFirstUser ? 'admin' : 'customer';
+            
+            $role = Role::firstOrCreate(['name' => $roleName]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'role_id' => $customerRole->id,
-            'phone' => $request->phone,
-            'email' => $request->email,
-            'password' => $request->password,
-        ]);
+            $user = User::create([
+                'name' => $request->name,
+                'role_id' => $role->id,
+                'phone' => $request->phone,
+                'email' => $request->email,
+                'password' => $request->password,
+            ]);
 
-        return response()->json([
-            'message' => 'Registration successful',
-            'token' => $user->createToken('api-token')->plainTextToken,
-            'user' => $user->load('role'),
-        ], 201);
+            return response()->json([
+                'message' => 'Registration successful' . ($isFirstUser ? ' (Admin Account Created)' : ''),
+                'token' => $user->createToken('api-token')->plainTextToken,
+                'user' => $user->load('role'),
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Registration failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
+
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::where('email', $request->email)->first();
+        try {
+            $user = User::where('email', $request->email)->first();
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Invalid credentials'], 422);
+            if (! $user || ! Hash::check($request->password, $user->password)) {
+                return response()->json(['message' => 'Invalid credentials'], 422);
+            }
+
+            return response()->json([
+                'message' => 'Login successful',
+                'token' => $user->createToken('api-token')->plainTextToken,
+                'user' => $user->load('role'),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Login failed: ' . $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'message' => 'Login successful',
-            'token' => $user->createToken('api-token')->plainTextToken,
-            'user' => $user->load('role'),
-        ]);
     }
+
 
     public function me(): JsonResponse
     {

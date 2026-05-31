@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class MenuItem extends Model
 {
     protected $fillable = [
-        'category_id', 'name', 'price', 'description', 'image', 'is_available',
+        'category_id', 'name', 'price', 'description', 'image', 'sub_category', 'badge', 'gradient', 'is_available',
     ];
 
     protected function casts(): array

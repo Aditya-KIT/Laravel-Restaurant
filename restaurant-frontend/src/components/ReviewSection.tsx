@@ -21,8 +21,10 @@ export default function ReviewSection() {
         const items = Array.isArray(response) ? response : response.data || [];
         setReviews(items.filter(r => r.rating >= 4).slice(0, 4));
       } catch (error) {
-        console.error("Failed to fetch reviews", error);
+        console.warn("Could not connect to the review API. Using fallback reviews instead. Details:", error);
+        setReviews(fallbackReviews.filter(r => r.rating >= 4).slice(0, 4));
       }
+
     }
     fetchReviews();
   }, []);

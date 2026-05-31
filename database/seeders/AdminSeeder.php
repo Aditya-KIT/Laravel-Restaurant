@@ -16,12 +16,12 @@ class AdminSeeder extends Seeder
         $adminRole = Role::where('name', 'admin')->first();
 
         User::updateOrCreate(
-            ['email' => 'admin@restaurant.test'],
+            ['email' => 'admin@test.com'],
             [
                 'name' => 'System Admin',
                 'phone' => '9999999999',
                 'role_id' => $adminRole?->id,
-                'password' => 'password123',
+                'password' => 'Admin@123',
             ]
         );
     }

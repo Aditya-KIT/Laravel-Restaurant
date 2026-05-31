@@ -21,6 +21,10 @@ class MenuController extends Controller
             $query->where('category_id', $request->integer('category_id'));
         }
 
+        if ($request->boolean('all')) {
+            return response()->json(['data' => $query->latest()->get()]);
+        }
+
         return response()->json($query->latest()->paginate(12));
     }
 }

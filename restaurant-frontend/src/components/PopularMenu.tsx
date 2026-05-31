@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { apiFetch } from "@/lib/api";
 
 type MenuItem = {
+  id?: number;
   name: string;
   cat: string;
   desc: string;
@@ -14,8 +16,10 @@ type MenuItem = {
 export default function PopularMenu() {
   const [activeTab, setActiveTab] = useState<string>("Starters");
   const [animating, setAnimating] = useState(false);
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const menuData: Record<string, MenuItem[]> = {
+  const fallbackMenuData: Record<string, MenuItem[]> = {
     Starters: [
       { name: "Gilawat Kebab", cat: "Signature", desc: "Melt-in-mouth mutton kebabs with 160 spices, a Lucknowi legacy since 1987.", price: "₹480", badge: "Chef's Pick", gradient: "linear-gradient(135deg,#3D1F08 0%,#8B4513 50%,#5D2E0C 100%)" },
       { name: "Burrata Caprese", cat: "Continental", desc: "Creamy burrata with heirloom tomatoes, micro-basil, and aged balsamic.", price: "₹620", badge: null, gradient: "linear-gradient(135deg,#1A2E1A 0%,#2D5A27 50%,#1A3D1A 100%)" },
@@ -38,8 +42,39 @@ export default function PopularMenu() {
     ]
   };
 
+  useEffect(() => {
+    async function loadMenu() {
+      try {
+        const res = await apiFetch<{ data: any[] }>("/menu?all=1");
+        if (res && res.data) {
+          setItems(res.data);
+        }
+      } catch (err) {
+        console.error("Failed to load backend menu:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadMenu();
+  }, []);
+
   const tabs = ["Starters", "Mains", "Desserts", "Drinks"];
-  const currentItems = menuData[activeTab] || [];
+
+  const currentItems: MenuItem[] = items.length > 0
+    ? items.filter(item => {
+        const catName = item.category?.name;
+        // Map "Main Course" to "Mains", "Beverages" to "Drinks" if they mismatch, but our seeder matches exactly.
+        return catName === activeTab;
+      }).map(item => ({
+        id: item.id,
+        name: item.name,
+        cat: item.sub_category || item.category?.name || "",
+        desc: item.description || "",
+        price: `₹${Math.round(item.price)}`,
+        badge: item.badge,
+        gradient: item.gradient || "linear-gradient(135deg,#3D1F08 0%,#8B4513 50%,#5D2E0C 100%)",
+      }))
+    : (fallbackMenuData[activeTab] || []);
 
   const handleTabClick = (tab: string) => {
     if (tab === activeTab) return;
@@ -60,12 +95,74 @@ export default function PopularMenu() {
     return map[cat] || '🍽️';
   };
 
-  const handleAddToCart = (name: string) => {
-    const toast = document.createElement('div');
-    toast.textContent = `${name} added to your order`;
-    toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#C9A96E;color:#0F0D0A;padding:12px 28px;border-radius:2px;font-size:13px;font-weight:500;letter-spacing:1px;z-index:9999;animation:fadeUp 0.3s ease';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2500);
+  const handleAddToCart = async (item: MenuItem) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      const toast = document.createElement('div');
+      toast.textContent = `Please Login to Add to Cart`;
+      toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#B02020;color:#FFF;padding:12px 28px;border-radius:2px;font-size:13px;font-weight:500;letter-spacing:1px;z-index:9999;animation:fadeUp 0.3s ease';
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.remove();
+        window.location.href = "/login";
+      }, 1500);
+      return;
+    }
+
+    try {
+      // If we are using dynamic items from db, we have item.id
+      let itemId = item.id;
+      if (!itemId && items.length > 0) {
+        // Try to match by name
+        const match = items.find(x => x.name.toLowerCase() === item.name.toLowerCase());
+        if (match) itemId = match.id;
+      }
+
+      // If we still don't have id (maybe using pure fallback), we can't save to DB cart
+      if (!itemId) {
+        const toast = document.createElement('div');
+        toast.textContent = `Unable to add demo product. Try again.`;
+        toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#B02020;color:#FFF;padding:12px 28px;border-radius:2px;font-size:13px;font-weight:500;letter-spacing:1px;z-index:9999;animation:fadeUp 0.3s ease';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2500);
+        return;
+      }
+
+      await apiFetch("/cart", "POST", {
+        menu_item_id: itemId,
+        quantity: 1
+      }, token);
+
+      const toast = document.createElement('div');
+      toast.textContent = `${item.name} added to cart`;
+      toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#C9A96E;color:#0F0D0A;padding:12px 28px;border-radius:2px;font-size:13px;font-weight:500;letter-spacing:1px;z-index:9999;animation:fadeUp 0.3s ease';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2500);
+
+      // Trigger standard window event to sync Cart badge in Navbar
+      window.dispatchEvent(new Event("cartUpdated"));
+
+    } catch (err: any) {
+      console.error(err);
+      if (err?.message === "Unauthenticated.") {
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        const toast = document.createElement('div');
+        toast.textContent = `Your session has expired. Please login again.`;
+        toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#B02020;color:#FFF;padding:12px 28px;border-radius:2px;font-size:13px;font-weight:500;letter-spacing:1px;z-index:9999;animation:fadeUp 0.3s ease';
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.remove();
+          window.location.href = "/login";
+        }, 1500);
+        return;
+      }
+      const toast = document.createElement('div');
+      toast.textContent = `Error adding item to cart`;
+      toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#B02020;color:#FFF;padding:12px 28px;border-radius:2px;font-size:13px;font-weight:500;letter-spacing:1px;z-index:9999;animation:fadeUp 0.3s ease';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2500);
+    }
   };
 
   return (
@@ -88,46 +185,52 @@ export default function PopularMenu() {
         ))}
       </div>
       
-      <div 
-        className="menu-grid" 
-        id="menuGrid" 
-        style={{ 
-          transition: 'all 0.4s ease', 
-          opacity: animating ? 0 : 1, 
-          transform: animating ? 'translateY(10px)' : 'translateY(0)' 
-        }}
-      >
-        {currentItems.map((item, idx) => (
-          <div className="menu-card" key={idx}>
-            <div className="menu-img">
-              <div 
-                className="menu-img-bg" 
-                style={{ 
-                  background: item.gradient, 
-                  width: '100%', 
-                  height: '100%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  fontSize: '56px' 
-                }}
-              >
-                {getEmoji(item.cat)}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--gold)' }}>
+          Loading menu items...
+        </div>
+      ) : (
+        <div 
+          className="menu-grid" 
+          id="menuGrid" 
+          style={{ 
+            transition: 'all 0.4s ease', 
+            opacity: animating ? 0 : 1, 
+            transform: animating ? 'translateY(10px)' : 'translateY(0)' 
+          }}
+        >
+          {currentItems.map((item, idx) => (
+            <div className="menu-card" key={idx}>
+              <div className="menu-img">
+                <div 
+                  className="menu-img-bg" 
+                  style={{ 
+                    background: item.gradient, 
+                    width: '100%', 
+                    height: '100%', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    fontSize: '56px' 
+                  }}
+                >
+                  {getEmoji(item.cat)}
+                </div>
+                {item.badge && <div className="menu-badge">{item.badge}</div>}
               </div>
-              {item.badge && <div className="menu-badge">{item.badge}</div>}
-            </div>
-            <div className="menu-body">
-              <div className="menu-cat">{item.cat}</div>
-              <div className="menu-name">{item.name}</div>
-              <div className="menu-desc">{item.desc}</div>
-              <div className="menu-footer">
-                <div className="menu-price">{item.price}</div>
-                <button className="add-btn" onClick={() => handleAddToCart(item.name)}>+</button>
+              <div className="menu-body">
+                <div className="menu-cat">{item.cat}</div>
+                <div className="menu-name">{item.name}</div>
+                <div className="menu-desc">{item.desc}</div>
+                <div className="menu-footer">
+                  <div className="menu-price">{item.price}</div>
+                  <button className="add-btn" onClick={() => handleAddToCart(item)}>+</button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

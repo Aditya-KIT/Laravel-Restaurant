@@ -11,10 +11,15 @@ class ReviewController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(
-            Review::with('user', 'menuItem')->where('is_approved', true)->latest()->get()
-        );
+        try {
+            return response()->json(
+                Review::with('user', 'menuItem')->where('is_approved', true)->latest()->get()
+            );
+        } catch (\Exception $e) {
+            return response()->json([]);
+        }
     }
+
 
     public function store(StoreReviewRequest $request): JsonResponse
     {

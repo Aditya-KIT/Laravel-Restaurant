@@ -9,6 +9,15 @@ use Illuminate\Http\JsonResponse;
 
 class BookingController extends Controller
 {
+    public function index(): JsonResponse
+    {
+        $bookings = Booking::where('user_id', auth()->id())
+            ->latest()
+            ->get();
+
+        return response()->json($bookings);
+    }
+
     public function store(StoreBookingRequest $request): JsonResponse
     {
         $booking = Booking::create([

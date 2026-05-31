@@ -18,6 +18,9 @@ return new class extends Migration
             $table->decimal('price', 10, 2);
             $table->text('description')->nullable();
             $table->string('image')->nullable();
+            $table->string('sub_category')->nullable();
+            $table->string('badge')->nullable();
+            $table->string('gradient')->nullable();
             $table->boolean('is_available')->default(true);
             $table->timestamps();
         });

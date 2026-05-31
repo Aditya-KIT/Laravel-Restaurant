@@ -22,7 +22,7 @@ const navigation = [
   { name: 'Categories', href: '/admin/categories', icon: Tags },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingBag },
   { name: 'Bookings', href: '/admin/bookings', icon: CalendarCheck },
-  { name: 'Customers', href: '/admin/customers', icon: Users },
+  { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Reviews', href: '/admin/reviews', icon: Star },
   { name: 'Payments', href: '/admin/payments', icon: CreditCard },
 ];
@@ -51,7 +51,7 @@ export default function AdminSidebar() {
         </h1>
       </div>
       <div className="flex flex-1 flex-col overflow-y-auto">
-        <nav className="flex-1 space-y-1 px-4 py-4">
+        <nav className="flex-1 flex flex-col space-y-2 px-4 py-6">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
             return (

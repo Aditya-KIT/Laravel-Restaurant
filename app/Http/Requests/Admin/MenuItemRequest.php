@@ -25,6 +25,9 @@ class MenuItemRequest extends FormRequest
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
             'image' => 'nullable|string',
+            'sub_category' => 'nullable|string|max:255',
+            'badge' => 'nullable|string|max:255',
+            'gradient' => 'nullable|string|max:500',
             'is_available' => 'required|boolean',
         ];
     }
