@@ -15,7 +15,13 @@ bootstrap/cache/*
 npm-debug.log
 yarn-error.log
 docker-compose.yml
-Dockerfile
 PROJECT_GUIDE.md
 README.md
 restaurant-frontend
+tests
+.editorconfig
+.styleci.yml
+phpunit.xml
+check_db.php
+resolve.php
+resolve_fast.php
