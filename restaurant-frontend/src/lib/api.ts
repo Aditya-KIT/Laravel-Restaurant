@@ -1,12 +1,9 @@
 const _rawApiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
 const API_BASE_URL = `${_rawApiUrl}/api/v1`;
-console.log("NEXT_PUBLIC_API_URL is:", process.env.NEXT_PUBLIC_API_URL ? "Defined" : "Undefined (using fallback)");
-
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export async function apiFetch<T>(endpoint: string, method: HttpMethod = "GET", body?: unknown, token?: string): Promise<T> {
-  console.log("Attempting to fetch from API URL:", `${API_BASE_URL}${endpoint}`);
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method,
@@ -19,19 +16,44 @@ export async function apiFetch<T>(endpoint: string, method: HttpMethod = "GET", 
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.message || `HTTP error! status: ${response.status}`);
+      // Try to parse the error body for a human-readable message
+      const contentType = response.headers.get("content-type") || "";
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      if (contentType.includes("application/json")) {
+        const errorBody = await response.json().catch(() => ({}));
+        // Handle Laravel validation errors (422)
+        if (errorBody.errors) {
+          const messages = Object.values(errorBody.errors as Record<string, string[]>).flat();
+          errorMessage = messages.join(", ");
+        } else if (errorBody.message) {
+          errorMessage = errorBody.message;
+        }
+      }
+      throw new Error(errorMessage);
     }
 
-    return response.json();
+    // Handle empty responses (204 No Content, or DELETE that returns nothing)
+    const contentLength = response.headers.get("content-length");
+    if (response.status === 204 || contentLength === "0") {
+      return {} as T;
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      return response.json();
+    }
+
+    return {} as T;
+
   } catch (error) {
     if (error instanceof TypeError && error.message === "Failed to fetch") {
-      console.warn(`NETWORK ERROR: Unable to reach the API at ${API_BASE_URL}. \n\nPlease ensure that:\n1. Your backend server is RUNNING.\n2. Apache/XAMPP is started.\n3. There are no CORS issues.`);
+      console.warn(
+        `NETWORK ERROR: Unable to reach the API at ${API_BASE_URL}.\n\n` +
+        `Please ensure that:\n1. Your backend server is RUNNING.\n2. Apache/XAMPP is started.\n3. There are no CORS issues.`
+      );
     } else {
-      console.warn("Fetch error details:", error);
+      console.warn("API fetch error:", error);
     }
     throw error;
   }
-
-
 }

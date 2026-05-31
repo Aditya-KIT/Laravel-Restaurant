@@ -39,7 +39,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/orders', [App\Http\Controllers\Api\OrderController::class, 'index']);
     });
 
-    Route::prefix('admin')->group(function () {
+    Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
         Route::prefix('dashboard')->group(function () {
             Route::get('/stats', [App\Http\Controllers\Api\Admin\DashboardController::class, 'stats']);
             Route::get('/recent-orders', [App\Http\Controllers\Api\Admin\DashboardController::class, 'recentOrders']);

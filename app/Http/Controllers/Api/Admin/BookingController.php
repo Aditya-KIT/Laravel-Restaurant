@@ -10,7 +10,7 @@ class BookingController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(Booking::latest()->get());
+        return response()->json(Booking::with('user')->latest()->get());
     }
 
     public function updateStatus(Booking $booking): JsonResponse
