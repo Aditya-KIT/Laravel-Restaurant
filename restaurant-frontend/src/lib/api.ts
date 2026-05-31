@@ -1,4 +1,5 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+const _rawApiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+const API_BASE_URL = `${_rawApiUrl}/api/v1`;
 console.log("NEXT_PUBLIC_API_URL is:", process.env.NEXT_PUBLIC_API_URL ? "Defined" : "Undefined (using fallback)");
 
 
